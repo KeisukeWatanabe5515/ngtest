@@ -1,32 +1,44 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const config = require('./config/dev');
-const FakeDb = require('./fake-db');
+const express = require("express");
+const mongoose = require("mongoose");
+const config = require("./config");
+const FakeDb = require("./fake-db");
 
-const productRoutes = require('./routes/products');
+const productRoutes = require("./routes/products");
+const path = require("path");
 
-mongoose.connect(config.DB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  useFindAndModify: false,
-  useCreateIndex: true
-}).then(
-  () => {
-    const fakeDb = new FakeDb();
-    fakeDb.initDb();
-  }
-);
+mongoose
+  .connect(config.DB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useFindAndModify: false,
+    useCreateIndex: true,
+  })
+  .then(
+    () => {
+      if (process.env.NODE_ENV !== "production") {
+        const fakeDb = new FakeDb();
+        // DB初期化(重複のため初回だけ)
+        // fakeDb.initDb();
+      }
+  });
 
 const app = express();
 
-app.use('/api/v1/products', productRoutes);
+app.use("/api/v1/products", productRoutes);
 
-// app.get('/products', function(req, res) {
-//     res.json({'success': true});
-// })
+if (process.env.NODE_ENV === "production") {
+  const appPath = path.join(__dirname, "..", "dist", "ngtest");
+  app.use(express.static(appPath));
+  app.get("*", function (req, res) {
+    res.sendFile(path.resolve(appPath, "index.html"));
+    // app.get('/products', function(req, res) {
+    //     res.json({'success': true});
+    // })
+  });
+}
 
-const PORT = process.env.PORT || '3001';
+const PORT = process.env.PORT || "3001";
 
-app.listen('3001', function() {
-    console.log('I am lerning!');
-})
+app.listen("3001", function () {
+  console.log("I am lerning!");
+});
